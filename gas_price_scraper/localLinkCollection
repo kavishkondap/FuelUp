@@ -1,0 +1,32 @@
+from threading import local
+from bs4 import BeautifulSoup
+import requests
+import pandas as pd
+
+
+data = pd.read_excel('countyLinks.xlsx')
+countyLinks = data['County Links']
+
+localLinks = []
+localNames = []
+
+for url in countyLinks:
+    s = requests.Session()
+    s.headers['User-Agent'] = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
+    s.max_redirects = 9223372036854775807
+    page = s.get(url)
+    soup = BeautifulSoup(page.content, "html.parser")
+    try:
+        for thing in soup.find_all ('div', class_='grid__column___nhz7X grid__mobile6___3PWzR grid__tablet4___3sPs8 DataGrid-module__gridEntry___1Ivee AreaCountyList-module__areaItem___3c4w7'):
+            link = thing.a['href']
+            link = "https://www.gasbuddy.com/" + link
+            localLinks.append (link)
+            localNames.append (thing.a.text)
+    except:
+        print ("FAILED")
+
+pushingData = {"Local Links":localLinks,
+                "Local Names":localNames}
+df = pd.DataFrame (pushingData, columns = ['Local Links', 'Local Names'])
+
+df.to_excel (r'C:\Users\kavis\Desktop\KAVISH\General Stuff\Gas Prices Project\localLinks.xlsx', index = False, header=True)
